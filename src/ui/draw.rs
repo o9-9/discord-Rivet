@@ -508,9 +508,11 @@ pub fn draw_ui(f: &mut ratatui::Frame, app: &mut App) {
         let emoji_popup_height = 8;
 
         let popup_rect = ratatui::layout::Rect {
-            x: input_area.x + 1,
+            x: input_area
+                .width
+                .saturating_sub(input_area.width.saturating_div(4)),
             y: input_area.y.saturating_sub(emoji_popup_height + 1),
-            width: input_area.width.saturating_sub(2),
+            width: input_area.width.saturating_sub(2).saturating_div(4),
             height: emoji_popup_height,
         };
 
