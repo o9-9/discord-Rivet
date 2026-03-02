@@ -575,7 +575,7 @@ pub fn draw_ui(f: &mut ratatui::Frame, app: &mut App) {
         }
     }
 
-    let is_editing = matches!(app.state, AppState::Editing(_, _, _));
+    let is_editing = matches!(&app.state, AppState::Editing(_, _, _));
     let border_color = if is_editing {
         Color::LightMagenta
     } else {
