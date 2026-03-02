@@ -613,7 +613,7 @@ pub async fn handle_keys_events(
                 if let Some(c) = state.input[..pos].chars().next_back()
                     && c != '\n'
                 {
-                    state.cursor_position -= c.len_utf8();
+                    state.cursor_position = state.cursor_position.saturating_sub(c.len_utf8());
                 }
                 if !(state.cursor_position == state.input.len() && state.input.ends_with('\n')) {
                     vim::clamp_cursor(&mut state);
