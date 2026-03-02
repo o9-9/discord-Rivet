@@ -71,6 +71,7 @@ pub enum AppAction {
     SigInt,
     InputChar(char),
     InputBackspace,
+    InputDelete,
     InputEscape,
     InputSubmit,
     SelectNext,

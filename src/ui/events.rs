@@ -90,6 +90,9 @@ pub async fn handle_input_events(
                                         KeyCode::Backspace => {
                                             tx.send(AppAction::InputBackspace).await.ok();
                                         }
+                                        KeyCode::Delete => {
+                                            tx.send(AppAction::InputDelete).await.ok();
+                                        }
                                         KeyCode::Up => {
                                             tx.send(AppAction::SelectPrevious).await.ok();
                                         }
@@ -794,6 +797,65 @@ pub async fn handle_keys_events(
                         let char_len = c.len_utf8();
                         state.input.remove(pos - char_len);
                         state.cursor_position -= char_len;
+                    }
+                }
+            }
+        }
+        AppAction::InputDelete => {
+            let current_state = state.state.clone();
+            match current_state {
+                AppState::Chatting(_) => {
+                    let pos = state.cursor_position + 1;
+                    if let Some(c) = state.input[..pos].chars().next_back() {
+                        let char_len = c.len_utf8();
+                        state.input.remove(pos - char_len);
+                    }
+                }
+                AppState::EmojiSelection(channel_id) => {
+                    let pos = state.cursor_position + 1;
+                    if let Some(c) = state.input[..pos].chars().next_back() {
+                        let char_len = c.len_utf8();
+                        state.input.remove(pos - char_len);
+                        // Recompute emoji_filter based on the current input and emoji_filter_start.
+                        if let Some(start) = state.emoji_filter_start {
+                            // Position just after the ':' that started the emoji filter.
+                            let filter_start = start + ':'.len_utf8();
+                            if state.cursor_position <= start || filter_start > state.input.len() {
+                                // Cursor moved to or before the ':' (or indices are invalid);
+                                // clear the filter as we're no longer within the emoji filter.
+                                state.emoji_filter.clear();
+                            } else {
+                                let end = std::cmp::min(state.cursor_position, state.input.len());
+                                if filter_start <= end {
+                                    state.emoji_filter = state.input[filter_start..end].to_string();
+                                } else {
+                                    state.emoji_filter.clear();
+                                }
+                            }
+                        } else {
+                            // No known start of emoji filter; be conservative and clear it.
+                            state.emoji_filter.clear();
+                        }
+
+                        if state.emoji_filter.is_empty() {
+                            state.state = AppState::Chatting(channel_id.clone());
+                            state.emoji_filter_start = None;
+                            state.status_message =
+                                "Chatting in channel. Press Enter to send message. Esc to return to channels"
+                                    .to_string();
+                        }
+                        state.selection_index = 0;
+                    }
+                }
+                _ => {
+                    let pos = if state.cursor_position < state.input.len() {
+                        state.cursor_position + 1
+                    } else {
+                        state.input.len()
+                    };
+                    if let Some(c) = state.input[..pos].chars().next_back() {
+                        let char_len = c.len_utf8();
+                        state.input.remove(pos - char_len);
                     }
                 }
             }
