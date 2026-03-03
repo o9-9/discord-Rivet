@@ -379,7 +379,7 @@ async fn input_submit(
             state.state = AppState::Chatting(channel_id.clone());
             state.emoji_filter.clear();
             state.emoji_filter_start = None;
-            state.selection_index = 0;
+            state.emoji_index = 0;
             state.status_message =
                 "Chatting in channel. Press Enter to send message, Esc to return to channels."
                     .to_string();
@@ -571,13 +571,13 @@ async fn move_selection(state: &mut MutexGuard<'_, App>, n: i32, total_filtered_
         AppState::EmojiSelection(_) => {
             if total_filtered_emojis > 0 {
                 if n < 0 {
-                    state.selection_index = if state.selection_index == 0 {
+                    state.emoji_index = if state.emoji_index == 0 {
                         total_filtered_emojis - 1
                     } else {
-                        state.selection_index - 1
+                        state.emoji_index - 1
                     };
                 } else {
-                    state.selection_index = (state.selection_index + 1) % total_filtered_emojis;
+                    state.emoji_index = (state.emoji_index + 1) % total_filtered_emojis;
                 }
             }
         }
@@ -805,10 +805,17 @@ pub async fn handle_keys_events(
             let current_state = state.state.clone();
             match current_state {
                 AppState::Chatting(_) => {
-                    let pos = state.cursor_position + 1;
-                    if let Some(c) = state.input[..pos].chars().next_back() {
-                        let char_len = c.len_utf8();
-                        state.input.remove(pos - char_len);
+                    if !state.input.is_empty() {
+                        let pos = {
+                            if state.cursor_position >= state.input.len() {
+                                state.cursor_position = state.input.len().saturating_sub(1);
+                            }
+                            state.cursor_position.saturating_add(1)
+                        };
+                        if let Some(c) = state.input[..pos].chars().next_back() {
+                            let char_len = c.len_utf8();
+                            state.input.remove(pos - char_len);
+                        }
                     }
                 }
                 AppState::EmojiSelection(channel_id) => {
@@ -844,7 +851,7 @@ pub async fn handle_keys_events(
                                 "Chatting in channel. Press Enter to send message. Esc to return to channels"
                                     .to_string();
                         }
-                        state.selection_index = 0;
+                        state.emoji_index = 0;
                     }
                 }
                 _ => {
