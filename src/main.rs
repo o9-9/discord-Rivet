@@ -23,7 +23,10 @@ use tokio::{
 };
 
 use crate::{
-    api::{ApiClient, Channel, Emoji, Guild, Message, User, channel::PermissionContext, dm::DM},
+    api::{
+        ApiClient, Channel, Emoji, Guild, Message, PartialMessage, User,
+        channel::PermissionContext, dm::DM,
+    },
     logs::{LogType, print_log},
     signals::{restore_terminal, setup_ctrlc_handler},
     ui::{draw_ui, handle_input_events, handle_keys_events, vim::VimState},
@@ -88,7 +91,7 @@ pub enum AppAction {
     ApiUpdateContext(Option<PermissionContext>),
     ApiUpdateCurrentUser(User),
     GatewayMessageCreate(Message),
-    GatewayMessageUpdate(Message),
+    GatewayMessageUpdate(PartialMessage),
     GatewayMessageDelete(String, String),
     TransitionToChat(String),
     TransitionToEditing(String, Message, String, char),

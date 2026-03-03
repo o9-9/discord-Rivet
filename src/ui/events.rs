@@ -1041,10 +1041,17 @@ pub async fn handle_keys_events(
         AppAction::GatewayMessageUpdate(msg) => {
             let mut msgs = state.messages.clone();
             if let Some(pos) = msgs.iter().position(|m| m.id == msg.id) {
-                // Merge updated fields. Guild messages often only send changed fields in UPDATE
-                // We'll replace the message entirely for simplicity, though Discord sometimes sends partials.
-                // Assuming `msg` has full data if it parses to `Message`
-                msgs[pos] = msg;
+                let mut existing = msgs[pos].clone();
+                if let Some(content) = msg.content {
+                    existing.content = Some(content);
+                }
+                if let Some(author) = msg.author {
+                    existing.author = author;
+                }
+                if let Some(timestamp) = msg.timestamp {
+                    existing.timestamp = timestamp;
+                }
+                msgs[pos] = existing;
                 state.messages = msgs;
             }
         }

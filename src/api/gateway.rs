@@ -161,7 +161,7 @@ impl GatewayClient {
                 }
             }
             "MESSAGE_UPDATE" => {
-                if let Ok(msg) = serde_json::from_value::<DiscordMessage>(d) {
+                if let Ok(msg) = serde_json::from_value::<crate::api::PartialMessage>(d) {
                     let _ = action_tx.send(AppAction::GatewayMessageUpdate(msg)).await;
                 }
             }

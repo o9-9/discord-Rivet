@@ -15,6 +15,7 @@ pub use emoji::Emoji;
 pub use gateway::GatewayClient;
 pub use guild::Guild;
 pub use message::Message;
+pub use message::PartialMessage;
 pub use user::User;
 
 use crate::{
