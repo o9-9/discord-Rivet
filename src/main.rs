@@ -295,14 +295,8 @@ async fn run_app(token: String, config: config::Config) -> Result<(), Error> {
 
         tx_api.send(AppAction::EndLoading).await.ok();
 
-        // Loop just waits for shutdown now since HTTP polling is removed
-        loop {
-            tokio::select! {
-                _ = rx_shutdown_api.recv() => {
-                    return;
-                }
-            }
-        }
+        // Wait for shutdown now since HTTP polling is removed
+        let _ = rx_shutdown_api.recv().await;
     });
 
     loop {

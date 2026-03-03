@@ -58,8 +58,7 @@ impl GatewayClient {
                 if event.op == 10 {
                     // Hello
                     let hello_data = event.d.unwrap();
-                    let interval = hello_data["heartbeat_interval"].as_u64().unwrap_or(41250);
-                    interval
+                    hello_data["heartbeat_interval"].as_u64().unwrap_or(41250)
                 } else {
                     return Err("Expected Hello".into());
                 }
@@ -125,16 +124,11 @@ impl GatewayClient {
                                     *seq = Some(s);
                                 }
 
-                                match event.op {
-                                    0 => {
-                                        // Dispatch
-                                        if let Some(t) = event.t {
-                                            if let Some(d) = event.d {
-                                                Self::handle_dispatch(&t, d, &action_tx).await;
-                                            }
-                                        }
+                                if event.op == 0 {
+                                    // Dispatch
+                                    if let (Some(t), Some(d)) = (event.t, event.d) {
+                                        Self::handle_dispatch(&t, d, &action_tx).await;
                                     }
-                                    _ => {}
                                 }
                             }
                         }
