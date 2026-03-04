@@ -93,7 +93,7 @@ pub enum AppAction {
     GatewayMessageCreate(Message),
     GatewayMessageUpdate(PartialMessage),
     GatewayMessageDelete(String, String),
-    GatewayTypingStart(String, String, u64, Option<String>),
+    GatewayTypingStart(String, String, Option<String>),
     TransitionToChat(String),
     TransitionToEditing(String, Message, String, char),
     TransitionToChannels(String),
