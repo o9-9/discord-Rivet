@@ -596,35 +596,34 @@ pub fn draw_ui(f: &mut ratatui::Frame, app: &mut App) {
         _ => None,
     };
 
-    if let Some(channel_id) = active_channel_id {
-        if let Some(typers) = app.typing_users.get(channel_id) {
-            if !typers.is_empty() {
-                let mut typers_names = Vec::new();
-                for id in typers.keys() {
-                    let mut name = "Someone".to_string();
-                    for msg in &app.messages {
-                        if msg.author.id == *id {
-                            name = msg.author.username.clone();
-                            break;
-                        }
-                    }
-                    typers_names.push(name);
+    if let Some(channel_id) = active_channel_id
+        && let Some(typers) = app.typing_users.get(channel_id)
+        && !typers.is_empty()
+    {
+        let mut typers_names = Vec::new();
+        for id in typers.keys() {
+            let mut name = "Someone".to_string();
+            for msg in &app.messages {
+                if msg.author.id == *id {
+                    name = msg.author.username.clone();
+                    break;
                 }
-
-                let text = if typers_names.len() > 3 {
-                    "Several people are typing...".to_string()
-                } else {
-                    let names = typers_names.join(", ");
-                    if typers_names.len() == 1 {
-                        format!("{names} is typing...")
-                    } else {
-                        format!("{names} are typing...")
-                    }
-                };
-
-                display_status_message = format!("{} | {}", app.status_message, text);
             }
+            typers_names.push(name);
         }
+
+        let text = if typers_names.len() > 3 {
+            "Several people are typing...".to_string()
+        } else {
+            let names = typers_names.join(", ");
+            if typers_names.len() == 1 {
+                format!("{names} is typing...")
+            } else {
+                format!("{names} are typing...")
+            }
+        };
+
+        display_status_message = format!("{} | {}", app.status_message, text);
     }
 
     f.render_widget(

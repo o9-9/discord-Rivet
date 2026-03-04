@@ -634,7 +634,7 @@ fn handle_user_typing(state: &mut App) {
         let now = std::time::Instant::now();
         let should_send = state
             .last_typing_sent
-            .map_or(true, |last| now.duration_since(last).as_secs() >= 8);
+            .is_none_or(|last| now.duration_since(last).as_secs() >= 8);
         if should_send && !state.input.is_empty() {
             state.last_typing_sent = Some(now);
             let api_client_clone = state.api_client.clone();
