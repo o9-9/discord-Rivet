@@ -73,7 +73,7 @@ impl GatewayClient {
             "op": 2, // Identify
             "d": {
                 "token": token,
-                "intents": 37376, // 1 << 9 (GUILDS_MESSAGES) | 1 << 12 (DIRECT_MESSAGES) | 1 << 15 (MESSAGE_CONTENT)
+                "intents": 55808, // 1<<9 (GUILDS_MESSAGES) | 1<<11 (GUILD_MESSAGE_TYPING) | 1<<12 (DIRECT_MESSAGES) | 1<<14 (DIRECT_MESSAGE_TYPING) | 1<<15 (MESSAGE_CONTENT)
                 "properties": {
                     "os": "linux",
                     "browser": "vimcord",
@@ -177,6 +177,10 @@ impl GatewayClient {
                 }
             }
             "TYPING_START" => {
+                let _ = crate::logs::print_log(
+                    format!("Typing Start: {:?}", d).into(),
+                    crate::logs::LogType::Info,
+                );
                 if let (Some(channel_id), Some(user_id), Some(timestamp)) = (
                     d["channel_id"].as_str(),
                     d["user_id"].as_str(),
