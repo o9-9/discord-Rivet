@@ -177,10 +177,6 @@ impl GatewayClient {
                 }
             }
             "TYPING_START" => {
-                let _ = crate::logs::print_log(
-                    format!("Typing Start: {:?}", d).into(),
-                    crate::logs::LogType::Info,
-                );
                 if let (Some(channel_id), Some(user_id), Some(timestamp)) = (
                     d["channel_id"].as_str(),
                     d["user_id"].as_str(),
