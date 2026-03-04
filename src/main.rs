@@ -144,9 +144,9 @@ pub struct App {
     pub last_message_ids: HashMap<String, String>,
     pub discreet_notifs: bool,
     deleted_message_ids: HashSet<String>,
-    pub last_typing_sent: Option<std::time::Instant>,
-    pub typing_users: HashMap<String, HashMap<String, std::time::Instant>>,
-    pub silent_typing: bool,
+    last_typing_sent: Option<std::time::Instant>,
+    typing_users: HashMap<String, HashMap<String, std::time::Instant>>,
+    silent_typing: bool,
 }
 
 async fn run_app(token: String, config: config::Config) -> Result<(), Error> {
