@@ -970,6 +970,12 @@ pub async fn handle_keys_events(
                     .last_message_ids
                     .insert(channel_id, newest_msg.id.clone());
             }
+            // Seed the username cache from all loaded message authors
+            for msg in &new_messages {
+                state
+                    .user_names
+                    .insert(msg.author.id.clone(), msg.author.username.clone());
+            }
             state.messages = new_messages
                 .into_iter()
                 .filter(|m| !state.deleted_message_ids.contains(&m.id))
@@ -1024,11 +1030,15 @@ pub async fn handle_keys_events(
         AppAction::ApiUpdateCurrentUser(user) => {
             state.current_user = Some(user);
         }
-        AppAction::GatewayTypingStart(channel_id, user_id, _timestamp) => {
+        AppAction::GatewayTypingStart(channel_id, user_id, _timestamp, display_name) => {
             // Typing indicator expires after 10 seconds or when the user sends a message
             let now = std::time::Instant::now();
             let channel_typers = state.typing_users.entry(channel_id).or_default();
-            channel_typers.insert(user_id, now);
+            channel_typers.insert(user_id.clone(), now);
+            // Cache the display name if provided by the gateway event
+            if let Some(name) = display_name {
+                state.user_names.insert(user_id, name);
+            }
         }
 
         AppAction::GatewayMessageCreate(msg) => {
@@ -1040,6 +1050,10 @@ pub async fn handle_keys_events(
 
             if Some(msg.channel_id.clone()) == active_channel_id {
                 let mut msgs = state.messages.clone();
+                // Cache author username from incoming message
+                state
+                    .user_names
+                    .insert(msg.author.id.clone(), msg.author.username.clone());
                 msgs.push(msg.clone());
                 // Sort by descending ID: newest messages first (to match REST API response)
                 msgs.sort_by_key(|m| std::cmp::Reverse(m.id.parse::<u64>().unwrap_or_default()));
@@ -1131,6 +1145,7 @@ pub async fn handle_keys_events(
             state.chat_scroll_offset = 0;
             state.cursor_position = 0;
             state.selection_index = 0;
+            state.last_typing_sent = None;
             state.status_message =
                 "Chatting in channel. Press Enter to send message, Esc to return to channels."
                     .to_string();

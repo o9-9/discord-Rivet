@@ -602,13 +602,11 @@ pub fn draw_ui(f: &mut ratatui::Frame, app: &mut App) {
     {
         let mut typers_names = Vec::new();
         for id in typers.keys() {
-            let mut name = "Someone".to_string();
-            for msg in &app.messages {
-                if msg.author.id == *id {
-                    name = msg.author.username.clone();
-                    break;
-                }
-            }
+            let name = app
+                .user_names
+                .get(id)
+                .cloned()
+                .unwrap_or_else(|| "Someone".to_string());
             typers_names.push(name);
         }
 

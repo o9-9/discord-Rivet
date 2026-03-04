@@ -182,11 +182,17 @@ impl GatewayClient {
                     d["user_id"].as_str(),
                     d["timestamp"].as_u64(),
                 ) {
+                    // Prefer guild nick, fall back to username from member object
+                    let display_name = d["member"]["nick"]
+                        .as_str()
+                        .or_else(|| d["member"]["user"]["username"].as_str())
+                        .map(|s| s.to_string());
                     let _ = action_tx
                         .send(AppAction::GatewayTypingStart(
                             channel_id.to_string(),
                             user_id.to_string(),
                             timestamp,
+                            display_name,
                         ))
                         .await;
                 }
