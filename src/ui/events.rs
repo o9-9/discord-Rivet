@@ -1006,8 +1006,14 @@ pub async fn handle_keys_events(
         AppAction::ApiUpdateDMs(new_dms) => {
             state.dms = new_dms.clone();
 
-            // Initialize last_message_ids for all DMs on load
+            // Initialize last_message_ids for all DMs on load and seed username cache
             for dm in new_dms {
+                // Seed user_names from all DM recipients
+                for recipient in &dm.recipients {
+                    state
+                        .user_names
+                        .insert(recipient.id.clone(), recipient.username.clone());
+                }
                 if let Some(msg_id) = dm.last_message_id {
                     // Only insert if it doesn't already exist so we don't accidentally
                     // overwrite during a mid-session refresh

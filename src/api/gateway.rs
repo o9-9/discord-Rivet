@@ -182,10 +182,11 @@ impl GatewayClient {
                     d["user_id"].as_str(),
                     d["timestamp"].as_u64(),
                 ) {
-                    // Prefer guild nick, fall back to username from member object
+                    // Prefer guild nick, fall back to member username, then top-level user (DMs)
                     let display_name = d["member"]["nick"]
                         .as_str()
                         .or_else(|| d["member"]["user"]["username"].as_str())
+                        .or_else(|| d["user"]["username"].as_str())
                         .map(|s| s.to_string());
                     let _ = action_tx
                         .send(AppAction::GatewayTypingStart(
