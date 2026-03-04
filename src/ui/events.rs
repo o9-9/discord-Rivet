@@ -626,6 +626,25 @@ async fn move_selection(state: &mut MutexGuard<'_, App>, n: i32, total_filtered_
     }
 }
 
+fn handle_user_typing(state: &mut App) {
+    if let AppState::Chatting(channel_id) = &state.state {
+        let now = std::time::Instant::now();
+        let should_send = state
+            .last_typing_sent
+            .map_or(true, |last| now.duration_since(last).as_secs() >= 8);
+        if should_send && !state.input.is_empty() {
+            state.last_typing_sent = Some(now);
+            let api_client_clone = state.api_client.clone();
+            let channel_id_clone = channel_id.clone();
+            tokio::spawn(async move {
+                let _ = api_client_clone
+                    .trigger_typing_indicator(&channel_id_clone)
+                    .await;
+            });
+        }
+    }
+}
+
 pub async fn handle_keys_events(
     mut state: MutexGuard<'_, App>,
     action: AppAction,
@@ -726,6 +745,7 @@ pub async fn handle_keys_events(
             let pos = state.cursor_position;
             state.input.insert_str(pos, &text);
             state.cursor_position += text.len();
+            handle_user_typing(&mut state);
         }
         AppAction::InputChar(c) => {
             if c == ':' && (!state.vim_mode || state.mode == InputMode::Insert) {
@@ -735,6 +755,7 @@ pub async fn handle_keys_events(
 
             if !state.vim_mode {
                 insert_char_at_cursor(&mut state, c);
+                handle_user_typing(&mut state);
             } else {
                 match state.mode {
                     InputMode::Normal => {
@@ -742,6 +763,7 @@ pub async fn handle_keys_events(
                     }
                     InputMode::Insert => {
                         insert_char_at_cursor(&mut state, c);
+                        handle_user_typing(&mut state);
                     }
                 }
             }
@@ -788,6 +810,7 @@ pub async fn handle_keys_events(
                         state.input.remove(pos - char_len);
                         state.cursor_position -= char_len;
                     }
+                    handle_user_typing(&mut state);
                 }
                 AppState::EmojiSelection(channel_id) => {
                     let pos = state.cursor_position;
@@ -858,6 +881,7 @@ pub async fn handle_keys_events(
                             state.input.remove(pos - char_len);
                         }
                     }
+                    handle_user_typing(&mut state);
                 }
                 AppState::EmojiSelection(channel_id) => {
                     let pos = state.cursor_position + 1;
@@ -997,6 +1021,12 @@ pub async fn handle_keys_events(
         AppAction::ApiUpdateCurrentUser(user) => {
             state.current_user = Some(user);
         }
+        AppAction::GatewayTypingStart(channel_id, user_id, _timestamp) => {
+            // Typing indicator expires after 10 seconds or when the user sends a message
+            let now = std::time::Instant::now();
+            let channel_typers = state.typing_users.entry(channel_id).or_default();
+            channel_typers.insert(user_id, now);
+        }
 
         AppAction::GatewayMessageCreate(msg) => {
             let active_channel_id = if let AppState::Chatting(id) = &state.state {
@@ -1036,6 +1066,11 @@ pub async fn handle_keys_events(
                 state
                     .last_message_ids
                     .insert(msg.channel_id.clone(), msg.id.clone());
+            }
+
+            // Remove the typing indicator if the author sent a message in the channel
+            if let Some(typers) = state.typing_users.get_mut(&msg.channel_id) {
+                typers.remove(&msg.author.id);
             }
         }
         AppAction::GatewayMessageUpdate(msg) => {
@@ -1217,6 +1252,21 @@ pub async fn handle_keys_events(
         }
         AppAction::Tick => {
             state.tick_count = state.tick_count.wrapping_add(1);
+
+            let now = std::time::Instant::now();
+            let mut empty_channels = Vec::new();
+
+            for (channel_id, typers) in state.typing_users.iter_mut() {
+                typers.retain(|_, timestamp| now.duration_since(*timestamp).as_secs() < 10);
+                if typers.is_empty() {
+                    empty_channels.push(channel_id.clone());
+                }
+            }
+
+            for channel_id in empty_channels {
+                state.typing_users.remove(&channel_id);
+            }
+
             return Some(KeywordAction::Continue);
         }
     }

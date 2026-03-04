@@ -481,6 +481,50 @@ pub fn draw_ui(f: &mut ratatui::Frame, app: &mut App) {
                 }
             }
 
+            let active_channel_id = match &app.state {
+                AppState::Chatting(id) => Some(id),
+                AppState::EmojiSelection(id) => Some(id),
+                AppState::Editing(id, _, _) => Some(id),
+                _ => None,
+            };
+
+            if let Some(channel_id) = active_channel_id {
+                if let Some(typers) = app.typing_users.get(channel_id) {
+                    if !typers.is_empty() {
+                        let mut typers_names = Vec::new();
+                        for id in typers.keys() {
+                            let mut name = "Someone".to_string();
+                            for msg in &app.messages {
+                                if msg.author.id == *id {
+                                    name = msg.author.username.clone();
+                                    break;
+                                }
+                            }
+                            typers_names.push(name);
+                        }
+
+                        let text = if typers_names.len() > 3 {
+                            "Several people are typing...".to_string()
+                        } else {
+                            let names = typers_names.join(", ");
+                            if typers_names.len() == 1 {
+                                format!("{names} is typing...")
+                            } else {
+                                format!("{names} are typing...")
+                            }
+                        };
+
+                        final_content.push(Line::from(vec![Span::styled(
+                            text,
+                            Style::default()
+                                .fg(Color::Yellow)
+                                .add_modifier(ratatui::style::Modifier::ITALIC),
+                        )]));
+                        total_visual_height += 1;
+                    }
+                }
+            }
+
             if app.selection_index == 0 {
                 app.chat_scroll_offset = total_visual_height.saturating_sub(max_height);
             }

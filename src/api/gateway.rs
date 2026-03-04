@@ -176,6 +176,21 @@ impl GatewayClient {
                         .await;
                 }
             }
+            "TYPING_START" => {
+                if let (Some(channel_id), Some(user_id), Some(timestamp)) = (
+                    d["channel_id"].as_str(),
+                    d["user_id"].as_str(),
+                    d["timestamp"].as_u64(),
+                ) {
+                    let _ = action_tx
+                        .send(AppAction::GatewayTypingStart(
+                            channel_id.to_string(),
+                            user_id.to_string(),
+                            timestamp,
+                        ))
+                        .await;
+                }
+            }
             _ => {
                 // Ignore other events
             }
