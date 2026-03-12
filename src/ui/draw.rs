@@ -438,18 +438,27 @@ pub fn draw_ui(f: &mut ratatui::Frame, app: &mut App) {
 
                 let author = format!(" {}: ", message.author.username);
 
-                let content = message
-                    .content
-                    .clone()
-                    .unwrap_or("(*non-text*)".to_string());
+                let content = message.map_mentions();
 
                 let content_lines: Vec<&str> = content.split('\n').collect();
+
+                let mentionned = if let Some(author) = &app.current_user {
+                    message.mentions.contains(author)
+                } else {
+                    false
+                };
 
                 let bg_color = if is_selected {
                     Color::DarkGray
                 } else {
                     Color::Reset
                 };
+
+                let mut style = Style::default().fg(Color::White).bg(bg_color);
+
+                if mentionned {
+                    style = style.reversed();
+                }
 
                 for (i, line_content) in content_lines.iter().enumerate() {
                     let mut spans = vec![];
@@ -476,10 +485,7 @@ pub fn draw_ui(f: &mut ratatui::Frame, app: &mut App) {
                         spans.push(Span::styled("".to_string(), Style::default().bg(bg_color)));
                     }
 
-                    spans.push(Span::styled(
-                        line_content.to_string(),
-                        Style::default().fg(Color::White).bg(bg_color),
-                    ));
+                    spans.push(Span::styled(line_content.to_string(), style));
                     final_content.push(Line::from(spans));
                 }
             }
